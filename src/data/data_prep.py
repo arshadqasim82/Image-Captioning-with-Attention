@@ -1,43 +1,51 @@
 import kagglehub
-import os
 import shutil
+from pathlib import Path
 
-data_dir = os.path.dirname(os.path.abspath(__file__))
-image_folder_path = os.path.join(data_dir, "jpg")
-labels_file_path = os.path.join(data_dir, "captions.txt")
 
-if os.path.exists(image_folder_path) and os.path.exists(labels_file_path):
-    print(f"Dataset already exists. Loading locally from '{data_dir}'.")
+Dataset_url = "adityajn105/flickr8k"
+image_dir = "jpg"
+captions_file = "captions.txt"
 
-else:
+KAGGLE_image_dirs = ["Images", "jpg"]
+KAGGLE_captions_dirs = ["captions.txt", "captions/captions.txt"]
+
+
+def setup_dataset():
+    data_dir = Path(__file__).resolve().parent
+    image_folder_path = data_dir / image_dir
+    labels_file_path = data_dir / captions_file
+
+    if image_folder_path.exists() and labels_file_path.exists():
+        print(f"Dataset already exists. Loading locally from '{data_dir}'.")
+        return
+
     print(f"Dataset not found locally. Downloading to {data_dir}")
-    os.makedirs(data_dir, exist_ok=True)
-    kaggle_path = kagglehub.dataset_download("adityajn105/flickr8k")
+    data_dir.mkdir(parents=True, exist_ok=True)
+    kaggle_cache_path = Path(kagglehub.dataset_download(Dataset_url))
 
-    image_dirs = [
-        os.path.join(kaggle_path, "Images"),
-        os.path.join(kaggle_path, "jpg"),
-    ]
-
-    for src in image_dirs:
-        if os.path.exists(src):
-            shutil.copytree(src, image_folder_path, dirs_exist_ok=True)
+    for src in KAGGLE_image_dirs:
+        src_path = kaggle_cache_path / src
+        if src_path.exists():
+            shutil.copytree(src_path, image_folder_path, dirs_exist_ok=True)
             break
     else:
-        raise FileNotFoundError("Could not find the Flickr8k image folder.")
+        raise FileNotFoundError(
+            "Could not find the Flickr8k image folder in the Kaggle cache.")
 
-    caption_files = [
-        os.path.join(kaggle_path, "captions.txt"),
-        os.path.join(kaggle_path, "captions", "captions.txt"),
-    ]
-
-    for src in caption_files:
-        if os.path.exists(src):
-            shutil.copy2(src, labels_file_path)
+    for src in KAGGLE_captions_dirs:
+        src_path = kaggle_cache_path / src
+        if src_path.exists():
+            shutil.copy2(src_path, labels_file_path)
             break
     else:
-        raise FileNotFoundError("Could not find captions.txt.")
+        raise FileNotFoundError(
+            f"Could not find {captions_file} in the Kaggle cache.")
 
     print("Flickr8k dataset is ready!")
     print("Images:", image_folder_path)
     print("Captions:", labels_file_path)
+
+
+if __name__ == "__main__":
+    setup_dataset()
