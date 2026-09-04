@@ -18,8 +18,8 @@ env/
 # Flickr8k images
 src/data/jpg/
 
-# Dataset captions (optional - see note below)
-# src/data/captions.txt
+# Dataset captions 
+src/data/captions.txt
 
 # =========================
 # Jupyter
