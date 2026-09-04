@@ -1,0 +1,49 @@
+# =========================
+# Python
+# =========================
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# =========================
+# Dataset
+# =========================
+
+# Flickr8k images
+src/data/jpg/
+
+# Dataset captions (optional - see note below)
+# src/data/captions.txt
+
+# =========================
+# Jupyter
+# =========================
+
+.ipynb_checkpoints/
+
+# =========================
+# IDE / Editor
+# =========================
+
+.vscode/
+.idea/
+
+# =========================
+# OS
+# =========================
+
+.DS_Store
+Thumbs.db
+
+# =========================
+# Environment / secrets
+# =========================
+
+.env
+.env.*
