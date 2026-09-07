@@ -2,15 +2,12 @@ import os
 import torch
 from torch.utils.data import Dataset
 from torch.nn.utils.rnn import pad_sequence
-from PIL import Image
 
 
 class Flickr8kDataset(Dataset):
-    def __init__(self, root_dir, captions_file, vocab, transform=None):
-        self.root_dir = root_dir
-        self.image_dir = os.path.join(self.root_dir, "jpg")
+    def __init__(self, features_dir, captions_file, vocab):
+        self.features_dir = features_dir
         self.vocab = vocab
-        self.transform = transform
         self.dataset_pairs = self.load_captions(captions_file)
 
     def load_captions(self, captions_file):
@@ -22,32 +19,32 @@ class Flickr8kDataset(Dataset):
                 parts = line.strip().split(',', 1)
                 if len(parts) == 2:
                     img_name, caption = parts
-                    pairs.append((img_name, caption))
+                    feature_name = img_name.replace('.jpg', '.pt')
+                    pairs.append((feature_name, caption))
         return pairs
 
-    def len(self):
+    def __len__(self):
         return len(self.dataset_pairs)
 
-    def get_item(self, idx):
-        img_name, caption_text = self.dataset_pairs[idx]
-        img_path = os.path.join(self.image_dir, img_name)
-        with Image.open(img_path) as img:
-            image = img.convert("RGB")
+    def __getitem__(self, idx):
+        feature_name, caption_text = self.dataset_pairs[idx]
+        feature_path = os.path.join(self.features_dir, feature_name)
 
-        if self.transform is not None:
-            image = self.transform(image)
+        features = torch.load(feature_path, weights_only=True)
+
         encoded_caption = self.vocab.encode(caption_text)
         caption_tensor = torch.tensor(encoded_caption, dtype=torch.long)
-        return image, caption_tensor
+
+        return features, caption_tensor
 
 
 class CollatePad:
     def __init__(self, pad_idx):
         self.pad_idx = pad_idx
 
-    def call(self, batch):
-        images = [item[0].unsqueeze(0) for item in batch]
-        images = torch.cat(images, dim=0)
+    def __call__(self, batch):
+        features = [item[0].unsqueeze(0) for item in batch]
+        features = torch.cat(features, dim=0)
         captions = [item[1] for item in batch]
 
         padded_captions = pad_sequence(
@@ -55,4 +52,4 @@ class CollatePad:
             batch_first=True,
             padding_value=self.pad_idx
         )
-        return images, padded_captions
+        return features, padded_captions
