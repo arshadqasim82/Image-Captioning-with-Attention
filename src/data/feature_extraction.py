@@ -7,14 +7,11 @@ import sys
 from pathlib import Path
 
 
-project_root = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(project_root))
+project_root = Path(__file__).resolve().parent.parent
+sys.path.append(str(project_root))
 
 
 def precompute_features(image_dir, output_dir):
-    if not os.path.isdir(image_dir):
-        raise FileNotFoundError(f"Image directory not found: {image_dir}")
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using compute device: {device}")
 
@@ -31,19 +28,19 @@ def precompute_features(image_dir, output_dir):
     os.makedirs(output_dir, exist_ok=True)
 
     image_paths = [os.path.join(image_dir, f)
-                   for f in os.listdir(image_dir)
-                   if Path(f).suffix.lower() in {'.jpg', '.jpeg'}]
+                   for f in os.listdir(image_dir) if f.endswith('.jpg')]
     print(
         f"Found {len(image_paths)} images. Starting extraction (this may take a bit)...")
 
     with torch.no_grad():
         for i, img_path in enumerate(image_paths):
             image = Image.open(img_path).convert("RGB")
+
             image_tensor = transform(image).unsqueeze(0).to(device)
             features = encoder(image_tensor)
-
             features = features.squeeze(0).cpu()
-            file_name = f"{Path(img_path).stem}.pt"
+
+            file_name = os.path.basename(img_path).replace('.jpg', '.pt')
             save_path = os.path.join(output_dir, file_name)
             torch.save(features, save_path)
 
@@ -54,7 +51,7 @@ def precompute_features(image_dir, output_dir):
 
 
 if __name__ == "__main__":
-    image_dir = os.path.join(project_root, "data", "jpg")
-    output_dir = os.path.join(project_root, "data", "features")
+    IMAGE_DIR = os.path.join(project_root, "data", "jpg")
+    OUTPUT_DIR = os.path.join(project_root, "data", "features")
 
-    precompute_features(image_dir, output_dir)
+    precompute_features(IMAGE_DIR, OUTPUT_DIR)

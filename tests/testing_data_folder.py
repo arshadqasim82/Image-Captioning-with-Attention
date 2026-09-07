@@ -1,9 +1,6 @@
 import importlib.util
 from pathlib import Path
-
 from torch.utils.data import DataLoader
-import torchvision.transforms as transforms
-import matplotlib.pyplot as plt
 
 project_root = Path(__file__).resolve().parents[1]
 
@@ -28,19 +25,7 @@ Vocabulary = tokenization_module.Vocabulary
 
 data_dir = project_root / "src" / "data"
 captions_file = data_dir / "captions.txt"
-
-
-class DatasetAdapter(Flickr8kDataset):
-    def __len__(self):
-        return self.len()
-
-    def __getitem__(self, index):
-        return self.get_item(index)
-
-
-class CollatePadAdapter(CollatePad):
-    def __call__(self, batch):
-        return self.call(batch)
+features_dir = data_dir / "features"
 
 
 def load_vocabulary(captions_file):
@@ -56,16 +41,10 @@ def load_vocabulary(captions_file):
 
 vocab = load_vocabulary(captions_file)
 
-transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor()
-])
-
-dataset = DatasetAdapter(
-    root_dir=str(data_dir),
+dataset = Flickr8kDataset(
+    features_dir=str(features_dir),
     captions_file=str(captions_file),
-    vocab=vocab,
-    transform=transform
+    vocab=vocab
 )
 
 pad_index = vocab.w2i["<pad>"]
@@ -74,13 +53,13 @@ data_loader = DataLoader(
     dataset=dataset,
     batch_size=4,
     shuffle=True,
-    collate_fn=CollatePadAdapter(pad_idx=pad_index)
+    collate_fn=CollatePad(pad_idx=pad_index)
 )
 
-images, captions = next(iter(data_loader))
+features, captions = next(iter(data_loader))
 
 print("--- Shape Check ---")
-print(f"Images tensor shape: {images.shape}")
+print(f"Features tensor shape: {features.shape}")
 print(f"Captions tensor shape: {captions.shape}")
 
 print("\n--- Decoding Check ---")
@@ -88,10 +67,3 @@ first_caption_tensor = captions[0].tolist()
 
 decoded_text = vocab.decode(first_caption_tensor)
 print(f"Decoded string: '{decoded_text}'")
-
-first_image = images[0].permute(1, 2, 0).numpy()
-
-plt.imshow(first_image)
-plt.title(decoded_text)
-plt.axis("off")
-plt.show()
