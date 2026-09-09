@@ -2,3 +2,6 @@ kagglehub
 torch
 torchvision
 matplotlib
+fastapi
+uvicorn
+python-multipart
