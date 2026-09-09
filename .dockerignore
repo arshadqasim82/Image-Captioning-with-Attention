@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+.pytest_cache/
+.github/
+tests/
+scripts/
+notebooks/
+*.pt
+src/data/
