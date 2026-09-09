@@ -9,14 +9,13 @@ import io
 from pathlib import Path
 import sys
 
-# Path Setup
+
 project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(project_root))
 
 
 app = FastAPI(title="Image Captioning API", version="1.0")
 
-# Global variables to hold the models in memory
 device = None
 encoder = None
 decoder = None
@@ -26,13 +25,11 @@ transform = None
 
 @app.on_event("startup")
 async def load_models():
-    """Loads the heavy model weights into memory ONCE when the server starts."""
     global device, encoder, decoder, vocab, transform
     print("Loading models into memory... This might take a moment.")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # Load Vocabulary
     captions_file = project_root / "src" / "data" / "captions.txt"
     with open(captions_file, "r", encoding="utf-8") as f:
         lines = f.readlines()
@@ -41,11 +38,9 @@ async def load_models():
     vocab = Vocabulary(freq_threshold=1)
     vocab.build_vocab(captions)
 
-    # Load Encoder
     encoder = CNNEncoder().to(device)
     encoder.eval()
 
-    # Load Decoder
     decoder_path = project_root / "decoder_epoch_5.pth"
     decoder = DecoderRNN(
         embed_dim=256, decoder_dim=512, attention_dim=256, vocab_size=len(vocab.i2w)
@@ -53,7 +48,6 @@ async def load_models():
     decoder.load_state_dict(torch.load(decoder_path, map_location=device))
     decoder.eval()
 
-    # Image Preprocessing
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
@@ -72,12 +66,10 @@ async def health_check():
 @app.post("/caption")
 async def generate_caption(file: UploadFile = File(...)):
     """Receives an image, passes it through the model, and returns a JSON caption."""
-    # Basic input validation
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image.")
 
     try:
-        # Read the image bytes from the API request
         image_bytes = await file.read()
         image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     except Exception:
@@ -85,7 +77,6 @@ async def generate_caption(file: UploadFile = File(...)):
 
     image_tensor = transform(image).unsqueeze(0).to(device)
 
-    # Beam Search Inference
     with torch.no_grad():
         features = encoder(image_tensor)
         mean_features = features.mean(dim=1)
