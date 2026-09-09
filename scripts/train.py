@@ -13,7 +13,7 @@ sys.path.append(str(project_root))
 
 
 def train():
-    data_dir = project_root / "data"
+    data_dir = project_root / "src" / "data"
     captions_file = data_dir / "captions.txt"
     features_dir = data_dir / "features"
 
@@ -47,7 +47,7 @@ def train():
     embed_dim = 256
     decoder_dim = 512
     attention_dim = 256
-    vocab_size = len(vocab)
+    vocab_size = len(vocab.i2w)
 
     print("Initializing Model...")
     decoder = DecoderRNN(
@@ -79,7 +79,7 @@ def train():
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
-            if batch_idx % 100 == 0:
+            if batch_idx % 10 == 0:
                 print(
                     f"Epoch [{epoch+1}/{num_epochs}], Batch [{batch_idx}/{len(dataloader)}], Loss: {loss.item():.4f}")
 

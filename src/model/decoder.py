@@ -38,6 +38,6 @@ class DecoderRNN(nn.Module):
             h, c = self.lstm(lstm_input, (h, c))
             output = self.fc(self.dropout(h))
             predictions[:, t, :] = output
-            alphas[:, t, :] = alpha
+            alphas[:, t, :] = alpha.squeeze(2)
 
         return predictions, alphas
